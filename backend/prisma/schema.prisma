@@ -1,0 +1,106 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id              Int           @id @default(autoincrement())
+  nombres         String
+  apellidos       String
+  dni             String        @unique
+  fechaNacimiento DateTime
+  correo          String        @unique
+  telefono        String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  appointments    Appointment[]
+  prescriptions   Prescription[]
+  medicalRecords  MedicalRecord[]
+
+  @@map("patients")
+}
+
+model Doctor {
+  id              Int           @id @default(autoincrement())
+  nombres         String
+  apellidos       String
+  especialidad    String
+  numeroLicencia  String        @unique
+  telefono        String
+  correo          String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  appointments    Appointment[]
+  prescriptions   Prescription[]
+  medicalRecords  MedicalRecord[]
+
+  @@map("doctors")
+}
+
+model Appointment {
+  id           Int      @id @default(autoincrement())
+  patientId    Int
+  doctorId     Int
+  date         DateTime
+  time         String
+  type         String   // 'presencial' | 'teleconsulta'
+  status       String   @default("programada") // 'programada' | 'completada' | 'cancelada'
+  notes        String?
+  meetingLink  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  doctor       Doctor   @relation(fields: [doctorId], references: [id])
+  prescriptions Prescription[]
+
+  @@map("appointments")
+}
+
+model Prescription {
+  id            Int      @id @default(autoincrement())
+  patientId     Int
+  doctorId      Int
+  appointmentId Int
+  medications   Json     // Array de medicamentos
+  instructions  String
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@map("prescriptions")
+}
+
+model MedicalRecord {
+  id                Int      @id @default(autoincrement())
+  patientId         Int
+  doctorId          Int
+  consultationDate  DateTime
+  consultationType  String   // 'presencial' | 'teleconsulta'
+  diagnosis         String
+  symptoms          String
+  treatment         String
+  recommendations   String
+  medications       Json     // Array de medicamentos
+  vitalSigns        Json?    // Signos vitales
+  notes             String
+  followUpRequired  Boolean  @default(false)
+  followUpDate      DateTime?
+  status            String   @default("active") // 'active' | 'completed' | 'cancelled'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  patient           Patient  @relation(fields: [patientId], references: [id])
+  doctor            Doctor   @relation(fields: [doctorId], references: [id])
+
+  @@map("medical_records")
+}
